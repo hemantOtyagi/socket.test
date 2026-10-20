@@ -15,7 +15,7 @@ A lightweight, browser-based WebSocket client for testing real-time, bidirection
 
 ### Connected state with message activity
 
-![WebSocket Terminal connected state](./assets/screenshots/connected.png)
+![WebSocket Terminal connected state](./assets/connected.png)
 
 To use these previews, save your screenshots in a `screenshots/` folder with the filenames shown above, or update the image paths to match your own filenames.
 
