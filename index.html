@@ -1,97 +1,766 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Live Test Rig</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0d0b" />
+    <title>WebSocket Terminal | Live Console</title>
+
     <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0a0d0b;
+            --panel: #101512;
+            --panel-light: #151c17;
+            --border: #26342a;
+            --green: #70f0a0;
+            --green-muted: #368958;
+            --text: #dce7de;
+            --muted: #849188;
+            --red: #ff7272;
+            --yellow: #e8c878;
+            --blue: #87baff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: sans-serif;
-            padding: 20px;
-            background: #121212;
-            color: #fff;
+            margin: 0;
+            min-height: 100vh;
+            padding: 32px 20px;
+            background:
+                radial-gradient(ellipse at top, #142219 0%, transparent 55%),
+                var(--bg);
+            color: var(--text);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono",
+                monospace;
+            font-size: 13px;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid var(--green);
+            outline-offset: 3px;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            display: grid;
+            place-items: center;
+            width: 42px;
+            height: 42px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--panel);
+            color: var(--green);
+            font-size: 21px;
+        }
+
+        .eyebrow {
+            margin: 0 0 5px;
+            color: var(--green);
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(18px, 4vw, 24px);
+            letter-spacing: -0.8px;
+        }
+
+        .version {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .connection {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 13px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            background: var(--panel);
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: var(--red);
+        }
+
+        .connection.connected {
+            border-color: #285d3b;
+            color: var(--green);
+        }
+
+        .connection.connected .dot {
+            background: var(--green);
+            box-shadow: 0 0 10px #70f08070;
+        }
+
+        .connection.connecting .dot {
+            background: var(--yellow);
+        }
+
+        .panel {
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--panel);
+        }
+
+        .panel + .panel {
+            margin-top: 18px;
+        }
+
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 18px;
+            border-bottom: 1px solid var(--border);
+            background: #121814;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 0;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .panel-title .symbol {
+            color: var(--green);
+        }
+
+        .section-label {
+            color: var(--muted);
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .endpoint {
+            overflow-wrap: anywhere;
+            color: var(--green);
+            font-size: 11px;
+        }
+
+        .connection-details {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            padding: 16px 18px;
+        }
+
+        .detail {
+            min-width: 0;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+        }
+
+        .detail-label {
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .detail-value {
+            overflow-wrap: anywhere;
+            color: var(--text);
+            font-size: 12px;
+        }
+
+        .composer {
+            padding: 18px;
+        }
+
+        .field-label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        #message-input {
+            width: 100%;
+            min-width: 0;
+            padding: 13px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+        }
+
+        #message-input::placeholder {
+            color: #59665d;
+        }
+
+        #message-input:focus {
+            border-color: var(--green-muted);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 15px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--panel-light);
+            color: var(--text);
+            white-space: nowrap;
+            transition: border-color 0.15s ease,
+                background 0.15s ease;
+        }
+
+        .btn:hover:not(:disabled) {
+            border-color: var(--green-muted);
+        }
+
+        .btn-primary {
+            border-color: var(--green);
+            background: var(--green);
+            color: #09130c;
+            font-weight: 700;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #94f7b5;
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.4;
+        }
+
+        .composer-hint {
+            margin: 12px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .kbd {
+            padding: 2px 5px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+        }
+
+        .log-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .live-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--green);
+            font-size: 10px;
+        }
+
+        .live-label .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green);
+        }
+
+        .log-count {
+            color: var(--muted);
+            font-size: 10px;
         }
 
         #log {
-            background-color: #000;
-            padding: 10px;
-            height: 300px;
-            overflow-y: scroll;
-            border: 1px solid #333;
+            height: 340px;
+            overflow: auto;
+            padding: 12px 18px;
+            background: #090c0a;
+            scrollbar-color: #35473a #090c0a;
+            scrollbar-width: thin;
         }
 
-        .status-on {
-            color: #00ff00;
+        .log-entry {
+            display: grid;
+            grid-template-columns: 78px 94px minmax(0, 1fr);
+            gap: 12px;
+            padding: 9px 0;
+            border-bottom: 1px solid #18201a;
+            line-height: 1.6;
         }
 
-        .status-off {
-            color: #ff0000;
+        .log-time {
+            color: #657269;
+            font-size: 11px;
+        }
+
+        .log-tag {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .tag-system {
+            color: var(--blue);
+        }
+
+        .tag-sent {
+            color: var(--green);
+        }
+
+        .tag-received {
+            color: #c6a0ff;
+        }
+
+        .tag-error {
+            color: var(--red);
+        }
+
+        .log-message {
+            min-width: 0;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+            color: #c8d2ca;
+        }
+
+        .empty-state {
+            display: grid;
+            place-items: center;
+            min-height: 220px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-icon {
+            margin-bottom: 12px;
+            color: #45594a;
+            font-size: 26px;
+        }
+
+        .empty-state p {
+            margin: 5px 0;
+        }
+
+        .empty-state .subtext {
+            font-size: 11px;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 18px;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .footer span:first-child {
+            color: var(--green-muted);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 22px 12px;
+            }
+
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+                margin-bottom: 22px;
+            }
+
+            .connection {
+                align-self: flex-start;
+            }
+
+            .connection-details {
+                grid-template-columns: 1fr;
+            }
+
+            .input-row {
+                flex-direction: column;
+            }
+
+            .btn-primary {
+                width: 100%;
+            }
+
+            .panel-heading {
+                padding: 13px;
+            }
+
+            .composer {
+                padding: 14px;
+            }
+
+            #log {
+                height: 320px;
+                padding: 10px 12px;
+            }
+
+            .log-entry {
+                grid-template-columns: 1fr;
+                gap: 4px;
+            }
+
+            .log-time {
+                font-size: 10px;
+            }
+
+            .footer {
+                flex-direction: column;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                transition: none !important;
+            }
         }
     </style>
 </head>
 
 <body>
+    <main class="app">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon" aria-hidden="true">&gt;_</div>
+                <div>
+                    <p class="eyebrow">Developer Tools / Networking</p>
+                    <h1>WebSocket Terminal</h1>
+                    <div class="version">Live broadcast test rig</div>
+                </div>
+            </div>
 
-    <h1>WebSocket Broadcast Console</h1>
-    <p id="status" class="status-off">Connecting..</p>
+            <div
+                id="connection-status"
+                class="connection connecting"
+                role="status"
+                aria-live="polite"
+            >
+                <span class="dot" aria-hidden="true"></span>
+                <span id="status-text">CONNECTING</span>
+            </div>
+        </header>
 
-    <form id="message-form">
-        <input id="message-input" type="text" placeholder="Send cargo.." required />
-        <button type="submit">Deploy Message</button>
-    </form>
+        <section class="panel" aria-labelledby="connection-heading">
+            <div class="panel-heading">
+                <h2 id="connection-heading" class="panel-title">
+                    <span class="symbol" aria-hidden="true">01.</span>
+                    Connection
+                </h2>
+                <span class="section-label">WebSocket Client</span>
+            </div>
 
-    <h3>Live Stream Logs:</h3>
-    <pre id="log"></pre>
+            <div class="connection-details">
+                <div class="detail">
+                    <div class="detail-label">Endpoint</div>
+                    <div class="detail-value endpoint">
+                        ws://localhost:8080
+                    </div>
+                </div>
+                <div class="detail">
+                    <div class="detail-label">Transport</div>
+                    <div class="detail-value">WebSocket / Full Duplex</div>
+                </div>
+            </div>
+        </section>
 
-</body>
+        <section class="panel" aria-labelledby="composer-heading">
+            <div class="panel-heading">
+                <h2 id="composer-heading" class="panel-title">
+                    <span class="symbol" aria-hidden="true">02.</span>
+                    Message Composer
+                </h2>
+                <span class="section-label">Outbound</span>
+            </div>
 
-<script>
+            <form id="message-form" class="composer">
+                <label class="field-label" for="message-input">
+                    Payload / Message body
+                </label>
 
-    const statusEl = document.getElementById('status')
-    const log = document.getElementById('log')
-    const input = document.getElementById('message-input')
+                <div class="input-row">
+                    <input
+                        id="message-input"
+                        type="text"
+                        placeholder="Type a message to broadcast..."
+                        autocomplete="off"
+                        maxlength="10000"
+                        required
+                    />
+                    <button id="send-button" class="btn btn-primary" type="submit">
+                        <span aria-hidden="true">↑</span>
+                        Send Message
+                    </button>
+                </div>
 
-    // 1. Initiate the Handshake
-    const socket = new WebSocket('ws://localhost:8080');
+                <p class="composer-hint">
+                    Messages are sent as plain text.
+                    Press <span class="kbd">Enter</span> to send.
+                    The server determines how messages are broadcast.
+                </p>
+            </form>
+        </section>
 
-    const appendLogs = (label, message) => {
-        const entry = `${new Date().toLocaleTimeString()} ${label} ${message}\n`
-        log.textContent = entry + log.textContent;
-    }
+        <section class="panel" aria-labelledby="logs-heading">
+            <div class="panel-heading">
+                <h2 id="logs-heading" class="panel-title">
+                    <span class="symbol" aria-hidden="true">03.</span>
+                    Event Stream
+                </h2>
 
-    socket.addEventListener('open', () => {
-        statusEl.textContent = "CONNECTED"
-        statusEl.className = 'status-on'
-        appendLogs('[SYSTEM]', 'Tunnel Established');
-    })
+                <div class="log-toolbar">
+                    <span class="live-label">
+                        <span class="dot" aria-hidden="true"></span>
+                        LIVE
+                    </span>
+                    <span id="log-count" class="log-count">0 EVENTS</span>
+                    <button id="clear-logs" class="btn" type="button">
+                        Clear
+                    </button>
+                </div>
+            </div>
 
+            <div
+                id="log"
+                role="log"
+                aria-label="WebSocket event logs"
+                aria-live="off"
+                aria-relevant="additions"
+            >
+                <div id="empty-state" class="empty-state">
+                    <div>
+                        <div class="empty-icon" aria-hidden="true">⌁</div>
+                        <p>No events recorded yet.</p>
+                        <p class="subtext">
+                            Connection and message activity will appear here.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    socket.addEventListener('close', () => {
-        statusEl.textContent = "DISCONNECTED"
-        statusEl.className = 'status-off'
-        appendLogs('[SYSTEM]', 'Tunnel Collapsed');
-    })
+        <footer class="footer">
+            <span>● LOCAL ENVIRONMENT</span>
+            <span>WebSocket Test Rig · Plain Text Mode</span>
+        </footer>
+    </main>
 
-    socket.addEventListener('message', (e) => {
-        appendLogs('[RECEIVED]', e.data)
-    })
+    <script>
+        const statusEl = document.getElementById("connection-status");
+        const statusText = document.getElementById("status-text");
+        const log = document.getElementById("log");
+        const input = document.getElementById("message-input");
+        const form = document.getElementById("message-form");
+        const sendButton = document.getElementById("send-button");
+        const clearButton = document.getElementById("clear-logs");
+        const logCount = document.getElementById("log-count");
+        const emptyState = document.getElementById("empty-state");
 
-    document.getElementById('message-form')
-        .addEventListener('submit', (e) => {
-            e.preventDefault();
+        let eventCount = 0;
 
-            if(socket.readyState != WebSocket.OPEN) {
-                appendLogs('[ERROR]', 'No active tunnel found')
+        // Initiate the WebSocket handshake.
+        const socket = new WebSocket("ws://localhost:8080");
+
+        function appendLogs(label, message) {
+            const wasAtBottom =
+                log.scrollHeight - log.scrollTop - log.clientHeight < 30;
+
+            const entry = document.createElement("div");
+            entry.className = "log-entry";
+
+            const time = document.createElement("span");
+            time.className = "log-time";
+            time.textContent = new Date().toLocaleTimeString();
+
+            const tag = document.createElement("span");
+            tag.className = "log-tag";
+
+            const tagClasses = {
+                "[SYSTEM]": "tag-system",
+                "[SENT]": "tag-sent",
+                "[RECEIVED]": "tag-received",
+                "[ERROR]": "tag-error",
+            };
+
+            tag.classList.add(tagClasses[label] || "tag-system");
+            tag.textContent = label;
+
+            const content = document.createElement("span");
+            content.className = "log-message";
+            content.textContent = String(message);
+
+            entry.append(time, tag, content);
+
+            // Remove the placeholder when the first event arrives.
+            emptyState?.remove();
+
+            // Newest event appears first.
+            log.prepend(entry);
+
+            eventCount++;
+            logCount.textContent =
+                `${eventCount} EVENT${eventCount === 1 ? "" : "S"}`;
+
+            // Keep the newest event visible when the user was at the top.
+            if (wasAtBottom || log.scrollTop === 0) {
+                log.scrollTop = 0;
+            }
+        }
+
+        function setConnectionStatus(state, message) {
+            statusEl.className = `connection ${state}`;
+            statusText.textContent = message;
+
+            const connected = state === "connected";
+            sendButton.disabled = !connected;
+            input.disabled = !connected;
+        }
+
+        socket.addEventListener("open", () => {
+            setConnectionStatus("connected", "CONNECTED");
+            appendLogs("[SYSTEM]", "Tunnel established successfully.");
+            input.focus();
+        });
+
+        socket.addEventListener("close", (event) => {
+            setConnectionStatus("disconnected", "DISCONNECTED");
+
+            appendLogs(
+                "[SYSTEM]",
+                `Tunnel closed. Code: ${event.code}. ${
+                    event.reason || "No additional reason provided."
+                }`
+            );
+        });
+
+        socket.addEventListener("error", () => {
+            appendLogs(
+                "[ERROR]",
+                "WebSocket error. Check that the server is running at ws://localhost:8080."
+            );
+        });
+
+        socket.addEventListener("message", (event) => {
+            appendLogs("[RECEIVED]", event.data);
+        });
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+
+            const message = input.value.trim();
+
+            if (!message) {
+                appendLogs("[ERROR]", "Cannot send an empty message.");
+                input.value = "";
+                return;
             }
 
-                const msg = input.value.trim();
-                socket.send(msg);
-                appendLogs('SENT', msg);
-                input.value = ''
+            if (socket.readyState !== WebSocket.OPEN) {
+                appendLogs("[ERROR]", "No active connection. Message not sent.");
+                return;
+            }
 
-        })
+            try {
+                socket.send(message);
+                appendLogs("[SENT]", message);
+                input.value = "";
+                input.focus();
+            } catch (error) {
+                appendLogs(
+                    "[ERROR]",
+                    `Failed to send message: ${error.message}`
+                );
+            }
+        });
 
-</script>
+        clearButton.addEventListener("click", () => {
+            log.replaceChildren();
 
+            eventCount = 0;
+            logCount.textContent = "0 EVENTS";
+
+            const placeholder = document.createElement("div");
+            placeholder.id = "empty-state";
+            placeholder.className = "empty-state";
+
+            const content = document.createElement("div");
+            const icon = document.createElement("div");
+            const title = document.createElement("p");
+            const subtitle = document.createElement("p");
+
+            icon.className = "empty-icon";
+            icon.textContent = "⌁";
+
+            title.textContent = "No events recorded yet.";
+            subtitle.className = "subtext";
+            subtitle.textContent =
+                "Connection and message activity will appear here.";
+
+            content.append(icon, title, subtitle);
+            placeholder.append(content);
+            log.append(placeholder);
+        });
+
+        // Reflect the initial state immediately.
+        setConnectionStatus("connecting", "CONNECTING");
+    </script>
+</body>
 </html>
+```
