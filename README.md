@@ -1,4 +1,3 @@
-[README (1).md](https://github.com/user-attachments/files/33733641/README.1.md)
 # WebSocket Terminal — Live Broadcast Test Rig
 
 A lightweight, browser-based WebSocket client for testing real-time, bidirectional communication. The terminal-inspired interface shows connection status, lets you send text messages, and displays sent, received, and system events in a live log.
