@@ -11,11 +11,11 @@ A lightweight, browser-based WebSocket client for testing real-time, bidirection
 
 ### Disconnected state
 
-![WebSocket Terminal disconnected state](./assets/screenshots/websocket-terminal-disconnected.png)
+![WebSocket Terminal disconnected state](assets/disconnected.png)
 
 ### Connected state with message activity
 
-![WebSocket Terminal connected state](./assets/screenshots/websocket-terminal-connected.png)
+![WebSocket Terminal connected state](./assets/screenshots/connected.png)
 
 To use these previews, save your screenshots in a `screenshots/` folder with the filenames shown above, or update the image paths to match your own filenames.
 
